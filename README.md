@@ -1,7 +1,7 @@
 # Kobalte transition retention reproduction
 
 Minimal browser reproduction for detached targets retained by the global transition registry in `@kobalte/utils@0.9.2`.
-Uses the published package, vanilla JavaScript, and native CSS transitions. No React, TanStack Query, copied implementation, or synthetic transition events are involved.
+Uses the published package, vanilla JavaScript, and native CSS transitions. The original `/` page isolates Kobalte. The `/react/` page reproduces the same retention with React Query Devtools; neither page copies library implementation or dispatches synthetic transition events.
 
 ## Run
 
@@ -63,4 +63,22 @@ Verified in Chrome 157.0.8103.78 on macOS 26.7, with 1000 native transitions and
 
 Both implementations ran the callback in the normal-event control.
 The affected-version heap snapshot confirms a strong path: module context → `transitionsByElement` → Map backing table → 1000 probe targets.
-The candidate source and upstream submission drafts remain local pending review; they are not part of this repository.
+The candidate source is published in the linked upstream PR; it is not copied into this repository.
+
+## React Query Devtools reproduction
+
+Run `npm ci` and `npm run dev`, then open **`/react/`** on the displayed origin. Wait until the Devtools panel and `Sample query ready` appear.
+
+This entry mounts a real `QueryClientProvider`, one stable sample query and `ReactQueryDevtools` with `initialIsOpen: true`. It does not execute the standalone Kobalte import. Kobalte's transition tracking arrives through the published Devtools bundle. The Vite source override described above only affects the standalone page, not code embedded in that bundle.
+
+1. Click **Run stopped events**. Wait for `done: true`: 1000 started, ended and removed; 0 cancelled.
+2. Chrome DevTools → Memory → **Collect garbage**.
+3. In Console, evaluate `window.repro.countAliveTargets()`: **1000**.
+4. Reload the page, wait for the panel, and click **Run control**. After completion and GC the same expression returns **0**.
+5. For the retaining path, take a heap snapshot after the stopped case and inspect `Detached <retention-probe>` through `transitionsByElement` in the Devtools bundle.
+
+`callbackRan: null` is intentional on this page: it does not import or call Kobalte's private transition helper. Only the standalone page measures that callback. The React page measures detached target retention through WeakRefs after manual GC.
+
+Verified in Chrome 157.0.8103.78: stopped case **1000 alive after GC**, normal control **0**. Both cases completed all 1000 transitions and removed all targets, with no cancellations. Versions are pinned in package-lock.json: React 19.3.1, React Query and React Query Devtools 5.107.1 (see package.json for exact installed versions).
+
+Upstream: [Kobalte issue #773](https://github.com/kobaltedev/kobalte/issues/773), [fix PR #774](https://github.com/kobaltedev/kobalte/pull/774).

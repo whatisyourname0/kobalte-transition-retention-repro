@@ -1,4 +1,7 @@
-import { runAfterTransition } from "@kobalte/utils";
+const devtoolsMode = location.pathname.startsWith("/react");
+const runAfterTransition = devtoolsMode
+  ? null
+  : (await import("@kobalte/utils")).runAfterTransition;
 import "./style.css";
 
 class RetentionProbe extends HTMLElement {}
@@ -33,7 +36,7 @@ async function run(stopEndPropagation) {
   }
   control.disabled = stopped.disabled = count.disabled = true;
   status.textContent = "Running";
-  stats = { stopEndPropagation, created: total, started: 0, ended: 0, cancelled: 0, removed: 0, callbackRan: false, done: false };
+  stats = { stopEndPropagation, created: total, started: 0, ended: 0, cancelled: 0, removed: 0, callbackRan: devtoolsMode ? null : false, done: false };
   const probes = Array.from({ length: total }, () => document.createElement("retention-probe"));
   weakTargets = probes.map(probe => new WeakRef(probe));
   const starts = [];
@@ -63,7 +66,7 @@ async function run(stopEndPropagation) {
     void targets.offsetHeight;
     for (const probe of probes) probe.classList.add("running");
     await Promise.race([Promise.all(starts), timeout]);
-    runAfterTransition(() => { stats.callbackRan = true; render(); });
+    runAfterTransition?.(() => { stats.callbackRan = true; render(); });
     await Promise.race([Promise.all(ends), timeout]);
     await nextFrame();
     // The transition is over: removing the element now cannot generate transitioncancel.
@@ -72,7 +75,7 @@ async function run(stopEndPropagation) {
     await nextFrame();
     await nextFrame();
     stats.done = true;
-    status.textContent = stats.callbackRan ? "Callback ran" : "Callback blocked";
+    status.textContent = devtoolsMode ? "Transitions completed and targets removed" : stats.callbackRan ? "Callback ran" : "Callback blocked";
     render();
   } finally {
     clearTimeout(deadline);
