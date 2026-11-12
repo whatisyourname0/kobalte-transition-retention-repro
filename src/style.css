@@ -1,0 +1,12 @@
+:root { font: 16px/1.5 system-ui, sans-serif; color: #18212b; background: #f6f7f9; }
+main { max-width: 42rem; margin: 4rem auto; padding: 2rem; background: white; border: 1px solid #d7dce2; border-radius: 12px; }
+h1 { margin-top: 0; font-size: 1.6rem; }
+input, button { font: inherit; padding: .45rem .7rem; }
+input { width: 6rem; margin-left: .5rem; }
+.actions { display: flex; flex-wrap: wrap; gap: .5rem; margin: 1.5rem 0; }
+output { display: block; font-weight: 600; }
+pre { overflow: auto; padding: 1rem; background: #f6f7f9; }
+#targets { position: fixed; top: 0; left: 0; width: 2px; height: 2px; pointer-events: none; }
+retention-probe { display: block; position: absolute; width: 2px; height: 2px; opacity: .1; transition: opacity 120ms linear; }
+retention-probe.running { opacity: .9; }
+@media (max-width: 600px) { main { margin: 1rem; padding: 1rem; } }
